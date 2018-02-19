@@ -7,19 +7,102 @@ output:
 
 
 ## Loading and preprocessing the data
+1) Load the data (i.e. read.csv())
+2) Process/transform the data (if necessary) into a format suitable for your analysis
 
+```{r}
+subDir <- "data"
+dataArchiveName <- "activity.zip"
+dataFileName <- "activity.csv"
 
+if(!file.exists(subDir)) {
+  dir.create("data")
+}
+unzip(dataArchiveName,exdir=subDir)
+activityData <- read.csv(file.path(subDir,dataFileName))
+numRecords <- nrow(activityData)
+```
+Loaded `r numRecords` records. Now glance at the data
+```{r}
+summary(activityData)
+```
 
 ## What is mean total number of steps taken per day?
+For this part of the assignment, you can ignore the missing values in the dataset.
 
+1) Calculate the total number of steps taken per day
+```{r}
+library(dplyr)
+stepsByDate <- activityData %>% group_by(date) %>% summarise(n=sum(steps,na.rm = TRUE))
+print(tbl_df(stepsByDate), n=nrow(stepsByDate))
+```
 
+2) If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day
+```{r}
+hist(stepsByDate$n, xlab = "Steps Per Day", main = "Frequency of Steps Per Day")
+```
+
+3) Calculate and report the mean and median of the total number of steps taken per day
+
+I decided to skip the 0s as the data is likely missing
+```{r}
+meanSteps <- format(mean(stepsByDate$n),scientific = FALSE)
+medianSteps <- median(stepsByDate$n)
+```
+The mean is `r meanSteps` steps per day. The median is `r medianSteps` steps per day.
 
 ## What is the average daily activity pattern?
+1) Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
+```{r}
+stepsByInterval <- activityData %>% group_by(interval) %>% summarise(n=mean(steps,na.rm = TRUE))
+plot(stepsByInterval,type="l",main="Steps Per Interval",xlab="Interval Period",ylab="Average Steps")
+```
 
+2) Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```{r}
+maxSteps <- max(activityData$steps,na.rm = TRUE)
+```
+The max steps in an interval is `r maxSteps`.
+```{r}
+notNullRows <- activityData[!is.na(activityData$steps),]
+notNullRows[notNullRows$steps == maxSteps,]
+```
 
 ## Imputing missing values
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
 
+1) Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+```{r}
+nullStepCount <- sum(is.na(activityData$steps))
+```
+In the data, there are `r nullStepCount` values missing.
+
+2) Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+We're going to replace the missing data with the average for that interval, \
+previously created.
+
+3) Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+I'm going to fill in empty values using the average steps for the interface across all dates of data.
+```{r}
+# TODO: Look at imputed data as I don't think the df looks right
+activityDataImputed <- activityData
+sum(is.na(activityDataImputed$steps))
+mergedData = merge(activityDataImputed, stepsByInterval, by="interval",suffixes=c(".Orig", ".IntMean"))
+activityDataImputed$steps = ifelse(is.na(mergedData$steps), mergedData$n, mergedData$steps)
+imputedMissingStep <- sum(is.na(activityDataImputed$steps))
+```
+After imputing the data, there are now `r imputedMissingStep` step measurements which have an empty value.
+
+
+4) Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+```r
+#TODO Need to fix imputed data above
+stepsByDateMeanImpured <- activityDataImputed %>% group_by(date) %>% summarise(n=mean(steps))
+stepsByDateMedianImpured <- activityDataImputed %>% group_by(date) %>% summarise(n=median(steps))
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
