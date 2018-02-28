@@ -160,7 +160,7 @@ The mean is 9354.23 steps per day. The median is 10395 steps per day. The no or 
 
 ```r
 stepsByInterval <- activityData %>% group_by(interval) %>% summarise(n=mean(steps,na.rm = TRUE))
-plot(stepsByInterval,type="l",main="Steps Per Interval",xlab="Interval Period",ylab="Average Steps")
+plot(stepsByInterval,type="l",main="Mean Steps Per Interval",xlab="Interval Period",ylab="Average Steps")
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
@@ -257,25 +257,35 @@ activityDataImputed$weekend <- weekend
 activityDataImputedWeekday <- as.vector(activityDataImputed[activityDataImputed$weekend %in% c("weekday"),])
 stepsByIntervalImputeWeekday <- activityDataImputedWeekday %>% group_by(interval) %>% summarise(n=mean(steps))
 
-weekdayMean <- mean(activityDataImputedWeekday$steps)
-weekdayMedian <- median(activityDataImputedWeekday$steps)
+weekdaySum <- activityDataImputedWeekday %>% group_by(date) %>% summarise(n=sum(steps))
+weekdayMean <- format(mean(weekdaySum$n),scientific = FALSE)
+weekdayMedian <- format(median(weekdaySum$n),scientific = FALSE)
 
 activityDataImputedWeekend <- as.vector(activityDataImputed[activityDataImputed$weekend %in% c("weekend"),])
-stepsByIntervalImputeWeekend <- activityDataImputedWeekend %>% group_by(interval) %>% summarise(n=mean(steps))
+stepsByIntervalImputeWeekday <- activityDataImputedWeekend %>% group_by(interval) %>% summarise(n=mean(steps))
 
-
-weekendMean <- mean(activityDataImputedWeekend$steps)
-weekendMedian <- median(activityDataImputedWeekend$steps)
+weekendSum <- activityDataImputedWeekend %>% group_by(date) %>% summarise(n=sum(steps))
+weekendMean <- format(mean(weekendSum$n),scientific = FALSE)
+weekendMedian <- format(median(weekendSum$n),scientific = FALSE)
 ```
 Now let's plot:
 
 ```r
+stepsByIntervalWeekday <- activityDataImputedWeekday %>% group_by(interval) %>% summarise(n=mean(steps,na.rm = TRUE))
+stepsByIntervalWeekend <- activityDataImputedWeekend %>% group_by(interval) %>% summarise(n=mean(steps,na.rm = TRUE))
+
 par(mfrow=c(2,1))
-plot(stepsByIntervalImputeWeekday,type="l",main="Steps Per Interval (Weekday)",xlab="Interval Period",ylab="Average Steps")
-plot(stepsByIntervalImputeWeekend,type="l",main="Steps Per Interval (Weekend)",xlab="Interval Period",ylab="Average Steps")
+plot(stepsByIntervalWeekday,type="l",main="Steps Per Interval (Weekday)",xlab="Interval Period",ylab="Average Steps")
+plot(stepsByIntervalWeekend,type="l",main="Steps Per Interval (Weekend)",xlab="Interval Period",ylab="Average Steps")
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
-The weekday mean is 36.8211158 and the median is 0.
-The weekend mean is 38.9617728 and the median is 0.
+The weekday mean is 10604.48 and the median is 8729.321.
+The weekend mean is 11220.99 and the median is 12223.29.
+It looks like the subjects get more steps on weekends which seems reasonable if
+subjects are walking or running around more. On weekdays, there i8s a long right
+tail which drags up the mean relative to the median. On weekends, there is a
+reverse as the median is higher with some less active people that drags down the
+mean relative to the median. The weekdays hace hi8gher stes during some
+intervals but on average less steps on period it appears.

@@ -24,8 +24,9 @@ numRecords <- nrow(activityData)
 ```
 Loaded `r numRecords` records. Now glance at the data
 ```{r}
-summary(activityData)
+str(activityData)
 ```
+At first glance, we have some missing step data and the variable in an integer. The dates are factors. The interval starts at 0 with increments of 5.
 
 ## What is mean total number of steps taken per day?
 For this part of the assignment, you can ignore the missing values in the dataset.
@@ -36,34 +37,39 @@ library(dplyr)
 stepsByDate <- activityData %>% group_by(date) %>% summarise(n=sum(steps,na.rm = TRUE))
 print(tbl_df(stepsByDate), n=nrow(stepsByDate))
 ```
+Some days have 0 or minimal steps though it may be due to missing data.
 
 2) If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day
 ```{r}
-hist(stepsByDate$n, xlab = "Steps Per Day", main = "Frequency of Steps Per Day")
+hist(stepsByDate$n, xlab = "Steps Per Day", main = "Frequency of Steps Per Day",breaks=10)
 ```
+
+Over a quarter of the days have daily steps in the 10,000 to 15,000 step range.
 
 3) Calculate and report the mean and median of the total number of steps taken per day
 
-I decided to skip the 0s as the data is likely missing
 ```{r}
 meanSteps <- format(mean(stepsByDate$n),scientific = FALSE)
 medianSteps <- median(stepsByDate$n)
 ```
-The mean is `r meanSteps` steps per day. The median is `r medianSteps` steps per day.
+The mean is `r meanSteps` steps per day. The median is `r medianSteps` steps per day. The no or low step days seem to drag down the mean though the median is less impacted showing the higher likely closer to actual average.
 
 ## What is the average daily activity pattern?
 1) Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
 ```{r}
 stepsByInterval <- activityData %>% group_by(interval) %>% summarise(n=mean(steps,na.rm = TRUE))
-plot(stepsByInterval,type="l",main="Steps Per Interval",xlab="Interval Period",ylab="Average Steps")
+plot(stepsByInterval,type="l",main="Mean Steps Per Interval",xlab="Interval Period",ylab="Average Steps")
 ```
+
+As expected, the steps start on average after the subjects wake up. The steps in a single period are higher in the morning than the rest of the day.
 
 2) Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 ```{r}
 maxSteps <- max(activityData$steps,na.rm = TRUE)
 ```
-The max steps in an interval is `r maxSteps`.
+
+The max steps in an interval is `r maxSteps`. This max occurs in the following period:
 ```{r}
 notNullRows <- activityData[!is.na(activityData$steps),]
 notNullRows[notNullRows$steps == maxSteps,]
@@ -80,14 +86,15 @@ In the data, there are `r nullStepCount` values missing.
 
 2) Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
-We're going to replace the missing data with the average for that interval, \
+We're going to replace the missing data with the average for that interval which we've
 previously created.
 
 3) Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
 I'm going to fill in empty values using the average steps for the interface across all dates of data.
+Merge a copy of the dataframe with the average by interval. If the value is NA, then we use the average
+value otherwise we use the original value.
 ```{r}
-# TODO: Look at imputed data as I don't think the df looks right
 activityDataImputed <- activityData
 sum(is.na(activityDataImputed$steps))
 mergedData = merge(activityDataImputed, stepsByInterval, by="interval",suffixes=c(".Orig", ".IntMean"))
@@ -98,11 +105,57 @@ After imputing the data, there are now `r imputedMissingStep` step measurements 
 
 
 4) Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
-```r
-#TODO Need to fix imputed data above
-stepsByDateMeanImpured <- activityDataImputed %>% group_by(date) %>% summarise(n=mean(steps))
-stepsByDateMedianImpured <- activityDataImputed %>% group_by(date) %>% summarise(n=median(steps))
+```{r}
+stepsByDateImputed <- activityDataImputed %>% group_by(date) %>% summarise(n=sum(steps))
+hist(stepsByDateImputed$n,main="Steps Per Day (Imputed)",xlab="Steps",breaks=10)
+meanImputedSteps <- format(mean(stepsByDateImputed$n),scientific = FALSE)
+medianImputedSteps <- format(median(stepsByDateImputed$n),scientific = FALSE)
 ```
-
+The mean went from originally `r meanSteps` to imputed value of `r meanImputedSteps`.
+The median went from originally `r medianSteps` to imputed value of `r medianImputedSteps`. Imputing
+the missing data increases the mean and median as steps are added for missing values. The right side of the histogran pushes out further to the right with a greater spread of higher valus.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
+
+1) Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+```{r}
+dayOfWeek <- weekdays(as.Date(activityDataImputed$date))
+weekend <- factor(ifelse(grepl("Saturday|Sunday",dayOfWeek),"weekend","weekday"))
+activityDataImputed$weekend <- weekend
+```
+
+2) Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
+```{r}
+activityDataImputedWeekday <- as.vector(activityDataImputed[activityDataImputed$weekend %in% c("weekday"),])
+stepsByIntervalImputeWeekday <- activityDataImputedWeekday %>% group_by(interval) %>% summarise(n=mean(steps))
+
+weekdaySum <- activityDataImputedWeekday %>% group_by(date) %>% summarise(n=sum(steps))
+weekdayMean <- format(mean(weekdaySum$n),scientific = FALSE)
+weekdayMedian <- format(median(weekdaySum$n),scientific = FALSE)
+
+activityDataImputedWeekend <- as.vector(activityDataImputed[activityDataImputed$weekend %in% c("weekend"),])
+stepsByIntervalImputeWeekday <- activityDataImputedWeekend %>% group_by(interval) %>% summarise(n=mean(steps))
+
+weekendSum <- activityDataImputedWeekend %>% group_by(date) %>% summarise(n=sum(steps))
+weekendMean <- format(mean(weekendSum$n),scientific = FALSE)
+weekendMedian <- format(median(weekendSum$n),scientific = FALSE)
+```
+Now let's plot:
+```{r}
+stepsByIntervalWeekday <- activityDataImputedWeekday %>% group_by(interval) %>% summarise(n=mean(steps,na.rm = TRUE))
+stepsByIntervalWeekend <- activityDataImputedWeekend %>% group_by(interval) %>% summarise(n=mean(steps,na.rm = TRUE))
+
+par(mfrow=c(2,1))
+plot(stepsByIntervalWeekday,type="l",main="Steps Per Interval (Weekday)",xlab="Interval Period",ylab="Average Steps")
+plot(stepsByIntervalWeekend,type="l",main="Steps Per Interval (Weekend)",xlab="Interval Period",ylab="Average Steps")
+```
+
+The weekday mean is `r weekdayMean` and the median is `r weekdayMedian`.
+The weekend mean is `r weekendMean` and the median is `r weekendMedian`.
+It looks like the subjects get more steps on weekends which seems reasonable if
+subjects are walking or running around more. On weekdays, there i8s a long right
+tail which drags up the mean relative to the median. On weekends, there is a
+reverse as the median is higher with some less active people that drags down the
+mean relative to the median. The weekdays hace hi8gher stes during some
+intervals but on average less steps on period it appears.
