@@ -30,7 +30,7 @@ str(activityData)
 ##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
 ##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
-At first glance, we have some missing step date in an integer. The dates are factors. The interval starts at 0 with increments of 5.
+At first glance, we have some missing step data and the variable in an integer. The dates are factors. The interval starts at 0 with increments of 5.
 
 ## What is mean total number of steps taken per day?
 For this part of the assignment, you can ignore the missing values in the dataset.
@@ -138,21 +138,21 @@ Some days have 0 or minimal steps though it may be due to missing data.
 2) If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day
 
 ```r
-hist(stepsByDate$n, xlab = "Steps Per Day", main = "Frequency of Steps Per Day")
+hist(stepsByDate$n, xlab = "Steps Per Day", main = "Frequency of Steps Per Day",breaks=10)
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+
 Over a quarter of the days have daily steps in the 10,000 to 15,000 step range.
 
 3) Calculate and report the mean and median of the total number of steps taken per day
 
-I decided to skip the 0s as the data is likely missing
 
 ```r
 meanSteps <- format(mean(stepsByDate$n),scientific = FALSE)
 medianSteps <- median(stepsByDate$n)
 ```
-The mean is 9354.23 steps per day. The median is 10395 steps per day. The no or low step days seem to drag down the mean though the median is less impacted showing the higher real view.
+The mean is 9354.23 steps per day. The median is 10395 steps per day. The no or low step days seem to drag down the mean though the median is less impacted showing the higher likely closer to actual average.
 
 ## What is the average daily activity pattern?
 1) Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
@@ -164,7 +164,8 @@ plot(stepsByInterval,type="l",main="Steps Per Interval",xlab="Interval Period",y
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
-As expected, the steps start on average after the subjects wake up. The steps in a singke period are higher in the morning than the rest of the day.
+
+As expected, the steps start on average after the subjects wake up. The steps in a single period are higher in the morning than the rest of the day.
 
 2) Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
@@ -237,7 +238,7 @@ medianImputedSteps <- format(median(stepsByDateImputed$n),scientific = FALSE)
 ```
 The mean went from originally 9354.23 to imputed value of 10766.19.
 The median went from originally 10395 to imputed value of 10351.62. Imputing
-the missing data increases the mean and median as steps are added for missing values.
+the missing data increases the mean and median as steps are added for missing values. The right side of the histogran pushes out further to the right with a greater spread of higher valus.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
@@ -256,13 +257,25 @@ activityDataImputed$weekend <- weekend
 activityDataImputedWeekday <- as.vector(activityDataImputed[activityDataImputed$weekend %in% c("weekday"),])
 stepsByIntervalImputeWeekday <- activityDataImputedWeekday %>% group_by(interval) %>% summarise(n=mean(steps))
 
+weekdayMean <- mean(activityDataImputedWeekday$steps)
+weekdayMedian <- median(activityDataImputedWeekday$steps)
+
 activityDataImputedWeekend <- as.vector(activityDataImputed[activityDataImputed$weekend %in% c("weekend"),])
 stepsByIntervalImputeWeekend <- activityDataImputedWeekend %>% group_by(interval) %>% summarise(n=mean(steps))
 
 
+weekendMean <- mean(activityDataImputedWeekend$steps)
+weekendMedian <- median(activityDataImputedWeekend$steps)
+```
+Now let's plot:
+
+```r
 par(mfrow=c(2,1))
 plot(stepsByIntervalImputeWeekday,type="l",main="Steps Per Interval (Weekday)",xlab="Interval Period",ylab="Average Steps")
 plot(stepsByIntervalImputeWeekend,type="l",main="Steps Per Interval (Weekend)",xlab="Interval Period",ylab="Average Steps")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](PA1_template_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+
+The weekday mean is 36.8211158 and the median is 0.
+The weekend mean is 38.9617728 and the median is 0.
